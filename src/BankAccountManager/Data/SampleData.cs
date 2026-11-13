@@ -1,12 +1,14 @@
 /*
  * Name:    Donavan D. McFadden
- * Date:    11/29/2026 (updated for Week 3)
+ * Date:    12/06/2026 (updated for Week 4)
  * Course:  SDC320L - Advanced Object-Oriented Programming Using C#
- * Project: Week 3 - Abstraction, Constructors, & Access Specifiers
+ * Project: Week 4 - Database Interactions
  *
  * Purpose: SampleData creates the Bank and its starting customers and
- *          accounts (made-up customers for testing). In Week 4 this data
- *          will be loaded from an SQLite database instead.
+ *          accounts (made-up customers for testing).
+ *          Week 4: this data is only used the FIRST time the program runs.
+ *          Program saves it into the new SQLite database, and after that
+ *          everything is loaded from the database instead.
  *          Week 3: uses the different constructor overloads so each one is
  *          exercised with realistic values.
  */
