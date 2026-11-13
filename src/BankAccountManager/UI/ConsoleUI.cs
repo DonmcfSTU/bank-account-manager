@@ -1,14 +1,15 @@
 /*
  * Name:    Donavan D. McFadden
- * Date:    11/12/2026 (updated for Week 2)
+ * Date:    11/29/2026 (updated for Week 3)
  * Course:  SDC320L - Advanced Object-Oriented Programming Using C#
- * Project: Week 2 - Software Design; Interfaces & Polymorphism
+ * Project: Week 3 - Abstraction, Constructors, & Access Specifiers
  *
  * Purpose: ConsoleUI holds all of the methods that write to the screen or
  *          read from the keyboard - the header, welcome message, menu,
  *          tables, and input prompts. Keeping this in one class means the
- *          Models classes don't have to know anything about the console,
- *          which should make the project easier to grow in later weeks.
+ *          Models classes don't need to know anything about the console.
+ *          Week 3: Week 3 header, menu options 8-12, transaction history
+ *          table, and new prompt helpers for adding/updating information.
  */
 
 using BankAccountManager.Interfaces;
@@ -16,22 +17,22 @@ using BankAccountManager.Models;
 
 namespace BankAccountManager.UI
 {
+    // ACCESS SPECIFIERS: the class is public static. Methods that Program
+    // needs are public; formatting helpers used only here are private.
     public static class ConsoleUI
     {
         private const int Width = 92;
 
-        // Week indicator, assignment title, and my name.
         public static void ShowHeader()
         {
             Console.WriteLine(new string('=', Width));
-            Console.WriteLine(Center("SDC320L Course Project - WEEK 2 (Phase 2)"));
-            Console.WriteLine(Center("Software Design; Interfaces & Polymorphism"));
+            Console.WriteLine(Center("SDC320L Course Project - WEEK 3 (Phase 3)"));
+            Console.WriteLine(Center("Abstraction, Constructors, & Access Specifiers"));
             Console.WriteLine(Center("Bank Account Management Application"));
             Console.WriteLine(Center("Created by Donavan D. McFadden"));
             Console.WriteLine(new string('=', Width));
         }
 
-        // Welcome message with basic instructions.
         public static void ShowWelcome()
         {
             Console.WriteLine();
@@ -40,10 +41,11 @@ namespace BankAccountManager.UI
             Console.WriteLine();
             Console.WriteLine("How to use this program:");
             Console.WriteLine("  - Type the number of a menu option and press Enter.");
-            Console.WriteLine("  - When asked for a customer, type the Customer ID shown in the customer list.");
-            Console.WriteLine("  - When asked for an account, type the account number (example: CHK-100101).");
-            Console.WriteLine("  - Option 6 shows only accounts that earn interest; option 7 runs");
-            Console.WriteLine("    month-end fees and interest for every account.");
+            Console.WriteLine("  - Pick customers by Customer ID (example: 1003) and accounts by account");
+            Console.WriteLine("    number (example: CHK-100101). The list is shown first so you can look it up.");
+            Console.WriteLine("  - Options 8-11 add customers, open and close accounts, and update customers.");
+            Console.WriteLine("    When updating, press Enter on any field to keep its current value.");
+            Console.WriteLine("  - Option 12 shows the transaction history for one account.");
             Console.WriteLine("  - Type Q (or Quit) at the main menu to exit.");
         }
 
@@ -51,21 +53,17 @@ namespace BankAccountManager.UI
         {
             Console.WriteLine();
             Console.WriteLine("---------------------------- MAIN MENU ----------------------------");
-            Console.WriteLine("  1. List all customers");
-            Console.WriteLine("  2. List all accounts for all customers");
-            Console.WriteLine("  3. View one customer and their accounts");
-            Console.WriteLine("  4. Make a deposit");
-            Console.WriteLine("  5. Make a withdrawal");
-            Console.WriteLine("  6. Interest report (interest-earning accounts)");
-            Console.WriteLine("  7. Run month-end processing (fees and interest)");
+            Console.WriteLine("  1. List all customers              7. Run month-end processing");
+            Console.WriteLine("  2. List all accounts               8. Add a new customer");
+            Console.WriteLine("  3. View one customer               9. Open a new account");
+            Console.WriteLine("  4. Make a deposit                 10. Close (remove) an account");
+            Console.WriteLine("  5. Make a withdrawal              11. Update customer information");
+            Console.WriteLine("  6. Interest report                12. View account transaction history");
             Console.WriteLine("  Q. Quit");
             Console.WriteLine("-------------------------------------------------------------------");
-            Console.WriteLine("  (Add, remove, and update features are coming in later phases.)");
         }
 
-        // Table of customers. Each row uses the Customer's composed
-        // Address object to show the city and state.
-        public static void ShowCustomerTable(List<Customer> customers)
+        public static void ShowCustomerTable(IEnumerable<Customer> customers)
         {
             Console.WriteLine();
             Console.WriteLine($"{"ID",-6}{"Name",-18}{"Phone",-16}{"City, State",-22}{"Accounts",9}{"Total Balance",16}");
@@ -73,12 +71,12 @@ namespace BankAccountManager.UI
             foreach (Customer c in customers)
             {
                 string cityState = $"{c.MailingAddress.City}, {c.MailingAddress.State}";
-                Console.WriteLine($"{c.CustomerId,-6}{c.FullName,-18}{c.Phone,-16}{cityState,-22}{c.Accounts.Count,9}{c.GetTotalBalance(),16:C}");
+                Console.WriteLine($"{c.CustomerId,-6}{Fit(c.FullName, 17),-18}{c.Phone,-16}{Fit(cityState, 21),-22}{c.Accounts.Count,9}{c.GetTotalBalance(),16:C}");
             }
         }
 
-        // Table of accounts. Works for any mix of Checking, Savings, and
-        // Money Market accounts because they all inherit from Account.
+        // Works for any mix of account types because they all inherit from
+        // the abstract Account class.
         public static void ShowAccountTable(IEnumerable<Account> accounts)
         {
             Console.WriteLine();
@@ -86,13 +84,26 @@ namespace BankAccountManager.UI
             Console.WriteLine(new string('-', Width));
             foreach (Account a in accounts)
             {
-                Console.WriteLine($"{a.AccountNumber,-12}{a.AccountType,-14}{a.OwnerName,-17}{a.DateOpened,-12:MM/dd/yyyy}{a.Balance,13:C}  {a.GetAccountDetails()}");
+                Console.WriteLine($"{a.AccountNumber,-12}{a.AccountType,-14}{Fit(a.OwnerName, 16),-17}{a.DateOpened,-12:MM/dd/yyyy}{a.Balance,13:C}  {a.GetAccountDetails()}");
             }
         }
 
-        // POLYMORPHISM through the INTERFACE: this method only knows about
-        // IInterestBearing, not about SavingsAccount or MoneyMarketAccount.
-        // Each object runs its own CalculateMonthlyInterest() version.
+        public static void ShowCustomerDetails(Customer c)
+        {
+            Console.WriteLine();
+            Console.WriteLine($"Customer #{c.CustomerId}: {c.FullName}");
+            Console.WriteLine($"  Phone:   {c.Phone}");
+            Console.WriteLine($"  Email:   {c.Email}");
+            Console.WriteLine($"  Address: {c.MailingAddress}");
+            if (c.Accounts.Count == 0)
+            {
+                Console.WriteLine("\n  (No open accounts)");
+                return;
+            }
+            ShowAccountTable(c.Accounts);
+            Console.WriteLine($"{"Total balance:",-67}{c.GetTotalBalance(),13:C}");
+        }
+
         public static void ShowInterestReport(List<IInterestBearing> accounts)
         {
             Console.WriteLine();
@@ -101,19 +112,15 @@ namespace BankAccountManager.UI
             decimal total = 0m;
             foreach (IInterestBearing item in accounts)
             {
-                // The interface reference is also an Account, so it can be
-                // cast back to read the shared account information.
                 Account account = (Account)item;
                 decimal interest = item.CalculateMonthlyInterest();
                 total += interest;
-                Console.WriteLine($"{account.AccountNumber,-12}{account.AccountType,-14}{account.OwnerName,-17}{account.Balance,13:C}{item.InterestRate,9:P2}{interest,24:C}");
+                Console.WriteLine($"{account.AccountNumber,-12}{account.AccountType,-14}{Fit(account.OwnerName, 16),-17}{account.Balance,13:C}{item.InterestRate,9:P2}{interest,24:C}");
             }
             Console.WriteLine(new string('-', 89));
             Console.WriteLine($"{"Total estimated interest this month:",-65}{total,24:C}");
-            Console.WriteLine("(Money market accounts below their minimum balance earn $0.00.)");
         }
 
-        // Shows the results of month-end processing for each account.
         public static void ShowMonthEndResults(List<(Account Account, decimal Before, string Result)> results)
         {
             Console.WriteLine();
@@ -125,16 +132,19 @@ namespace BankAccountManager.UI
             }
         }
 
-        // Full profile for one customer.
-        public static void ShowCustomerDetails(Customer c)
+        public static void ShowTransactionHistory(Account account)
         {
             Console.WriteLine();
-            Console.WriteLine($"Customer #{c.CustomerId}: {c.FullName}");
-            Console.WriteLine($"  Phone:   {c.Phone}");
-            Console.WriteLine($"  Email:   {c.Email}");
-            Console.WriteLine($"  Address: {c.MailingAddress}");
-            ShowAccountTable(c.Accounts);
-            Console.WriteLine($"{"Total balance:",-67}{c.GetTotalBalance(),13:C}");
+            Console.WriteLine($"Transaction history for {account.AccountNumber} ({account.AccountType}) - {account.OwnerName}");
+            Console.WriteLine();
+            Console.WriteLine($"{"Date",-12}{"Type",-17}{"Description",-33}{"Amount",13}{"Balance",14}");
+            Console.WriteLine(new string('-', 89));
+            foreach (Transaction t in account.Transactions)
+            {
+                Console.WriteLine($"{t.Date,-12:MM/dd/yyyy}{FormatType(t.Type),-17}{Fit(t.Description, 32),-33}{t.Amount,13:C}{t.BalanceAfter,14:C}");
+            }
+            Console.WriteLine(new string('-', 89));
+            Console.WriteLine($"{"Current balance:",-75}{account.Balance,14:C}");
         }
 
         public static string Prompt(string message)
@@ -143,7 +153,33 @@ namespace BankAccountManager.UI
             return (Console.ReadLine() ?? string.Empty).Trim();
         }
 
-        // Keeps asking until the user types a positive dollar amount.
+        // Asks for a value and keeps asking until something is typed.
+        public static string PromptRequired(string label)
+        {
+            while (true)
+            {
+                string value = Prompt($"  {label}: ");
+                if (value.Length > 0)
+                {
+                    return value;
+                }
+                ShowError($"  {label} is required.");
+            }
+        }
+
+        // Shows the current value in brackets; pressing Enter keeps it.
+        public static string PromptWithDefault(string label, string currentValue)
+        {
+            string value = Prompt($"  {label} [{currentValue}]: ");
+            return value.Length == 0 ? currentValue : value;
+        }
+
+        public static bool PromptYesNo(string message)
+        {
+            string answer = Prompt(message + " (Y/N): ").ToUpper();
+            return answer == "Y" || answer == "YES";
+        }
+
         public static decimal PromptForAmount(string message)
         {
             while (true)
@@ -157,9 +193,6 @@ namespace BankAccountManager.UI
             }
         }
 
-        // Clears the console window. Console.Clear() can throw an error when
-        // the output is redirected (for example, to a file), so in that case
-        // the program just keeps going without clearing.
         public static void ClearScreen()
         {
             try
@@ -168,7 +201,7 @@ namespace BankAccountManager.UI
             }
             catch (IOException)
             {
-                // Nothing to clear - output is not going to a real console window.
+                // Output is redirected (not a real console window) - nothing to clear.
             }
         }
 
@@ -182,6 +215,7 @@ namespace BankAccountManager.UI
             Console.ReadLine();
         }
 
+        // ACCESS SPECIFIER - private: helpers only used inside ConsoleUI.
         private static void WriteColor(string message, ConsoleColor color)
         {
             ConsoleColor original = Console.ForegroundColor;
@@ -194,6 +228,18 @@ namespace BankAccountManager.UI
         {
             int padding = Math.Max(0, (Width - text.Length) / 2);
             return new string(' ', padding) + text;
+        }
+
+        // Turns an enum value like OpeningDeposit into "Opening Deposit".
+        private static string FormatType(TransactionType type)
+        {
+            return type == TransactionType.OpeningDeposit ? "Opening Deposit" : type.ToString();
+        }
+
+        // Shortens long text so table columns stay lined up.
+        private static string Fit(string text, int maxLength)
+        {
+            return text.Length <= maxLength ? text : text.Substring(0, maxLength - 1) + "~";
         }
     }
 }
