@@ -1,49 +1,77 @@
 /*
  * Name:    Donavan D. McFadden
- * Date:    11/12/2026 (updated for Week 2)
+ * Date:    11/29/2026 (updated for Week 3)
  * Course:  SDC320L - Advanced Object-Oriented Programming Using C#
- * Project: Week 2 - Software Design; Interfaces & Polymorphism
+ * Project: Week 3 - Abstraction, Constructors, & Access Specifiers
  *
- * Purpose: MoneyMarketAccount is a DERIVED class of SavingsAccount, which is
- *          itself derived from Account (MoneyMarketAccount -> SavingsAccount
- *          -> Account). It requires a minimum balance.
- *          Week 2: it inherits the IInterestBearing implementation from
- *          SavingsAccount, but overrides how interest is calculated (no
- *          interest is paid for a month when the balance is below the
- *          minimum) and adds a low-balance fee at month end.
+ * Purpose: MoneyMarketAccount is derived from SavingsAccount (which is derived
+ *          from the abstract Account class). It requires a minimum balance:
+ *          withdrawals can't go below it, no interest is paid while the
+ *          balance is under it, and a low-balance fee is charged at month end.
  */
 
 namespace BankAccountManager.Models
 {
-    // INHERITANCE: MoneyMarketAccount IS-A SavingsAccount (and IS-AN Account),
-    // so it is also an IInterestBearing account.
+    // INHERITANCE: MoneyMarketAccount IS-A SavingsAccount IS-AN Account.
     public class MoneyMarketAccount : SavingsAccount
     {
-        public decimal MinimumBalance { get; set; }
-        public decimal LowBalanceFee { get; set; } = 15.00m;
+        private const decimal DefaultInterestRate = 0.0465m;
+        private const decimal DefaultMinimumBalance = 2500.00m;
 
+        // ACCESS SPECIFIERS: read-only from outside.
+        public decimal MinimumBalance { get; }
+        public decimal LowBalanceFee { get; } = 15.00m;
+
+        public override string AccountType => "Money Market";
+
+        // CONSTRUCTOR (full): ": base(...)" passes the first four values up to
+        // SavingsAccount, which passes three of them up to Account.
         public MoneyMarketAccount(string accountNumber, decimal openingBalance, DateTime dateOpened,
                                   decimal interestRate, decimal minimumBalance)
             : base(accountNumber, openingBalance, dateOpened, interestRate)
         {
-            AccountType = "Money Market";
+            if (minimumBalance < 0)
+            {
+                throw new ArgumentException("Minimum balance cannot be negative.");
+            }
             MinimumBalance = minimumBalance;
         }
 
-        // POLYMORPHISM (override): a withdrawal is not allowed if it would
-        // drop the balance below the minimum.
-        public override void Withdraw(decimal amount)
+        // CONSTRUCTOR (overload): new money market account with standard terms.
+        // A brand-new account must be opened with at least the minimum, so the
+        // opening balance is checked by RequireMinimum() BEFORE the chained
+        // constructor runs.
+        public MoneyMarketAccount(string accountNumber, decimal openingBalance)
+            : this(accountNumber, RequireMinimum(openingBalance), DateTime.Today,
+                   DefaultInterestRate, DefaultMinimumBalance)
+        {
+        }
+
+        // ACCESS SPECIFIER - private static: a helper used only by the
+        // constructor above.
+        private static decimal RequireMinimum(decimal openingBalance)
+        {
+            if (openingBalance < DefaultMinimumBalance)
+            {
+                throw new ArgumentException(
+                    $"A new money market account requires an opening deposit of at least {DefaultMinimumBalance:C}.");
+            }
+            return openingBalance;
+        }
+
+        // ABSTRACTION + ACCESS SPECIFIER (protected override): adds the
+        // minimum-balance rule on top of SavingsAccount's rule.
+        protected override bool CanWithdraw(decimal amount, out string reason)
         {
             if (Balance - amount < MinimumBalance)
             {
-                throw new InvalidOperationException(
-                    $"Withdrawal would drop the balance below the {MinimumBalance:C} minimum.");
+                reason = $"Withdrawal would drop the balance below the {MinimumBalance:C} minimum.";
+                return false;
             }
-            base.Withdraw(amount);
+            return base.CanWithdraw(amount, out reason);
         }
 
-        // POLYMORPHISM (override of the interface method from SavingsAccount):
-        // no interest is earned while the balance is under the minimum.
+        // No interest while below the minimum.
         public override decimal CalculateMonthlyInterest()
         {
             if (Balance < MinimumBalance)
@@ -58,13 +86,11 @@ namespace BankAccountManager.Models
             return $"APY {InterestRate:P2}, Min {MinimumBalance:C}";
         }
 
-        // POLYMORPHISM (override): interest if at/above the minimum,
-        // otherwise a low-balance fee.
         public override string ProcessMonthEnd()
         {
             if (Balance < MinimumBalance)
             {
-                Balance -= LowBalanceFee;
+                PostTransaction(TransactionType.Fee, -LowBalanceFee, "Low-balance fee");
                 return $"Below minimum - charged {LowBalanceFee:C} low-balance fee";
             }
             return base.ProcessMonthEnd();
