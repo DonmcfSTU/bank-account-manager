@@ -1,33 +1,51 @@
 /*
  * Name:    Donavan D. McFadden
- * Date:    11/12/2026
+ * Date:    11/29/2026 (updated for Week 3)
  * Course:  SDC320L - Advanced Object-Oriented Programming Using C#
- * Project: Week 2 - Software Design; Interfaces & Polymorphism
+ * Project: Week 3 - Abstraction, Constructors, & Access Specifiers
  *
- * Purpose: The Bank class is the "container" for the whole application. It
- *          holds the bank's name and its list of customers, and it provides
- *          methods to find customers and accounts. Moving this out of
- *          Program.cs keeps the menu code simple, and in Week 4 this is
- *          where the SQLite database will plug in.
+ * Purpose: The Bank class holds all customers and is the main entry point for
+ *          finding, adding, and removing customers and accounts.
+ *          Week 3: added a default constructor, automatic customer IDs and
+ *          account numbers (kept private), and methods to open and close
+ *          accounts.
  */
 
 using BankAccountManager.Interfaces;
 
 namespace BankAccountManager.Models
 {
-    // COMPOSITION: a Bank HAS customers (and each Customer has an Address
-    // and Accounts), so the whole program is built from smaller objects.
+    // COMPOSITION: a Bank HAS customers.
     public class Bank
     {
+        private const string DefaultName = "McFadden Community Bank";
+
         public string Name { get; }
 
+        // ACCESS SPECIFIERS - private: the customer list and the next-ID
+        // counter are only managed inside Bank, so IDs can't be duplicated.
         private readonly List<Customer> _customers = new List<Customer>();
+        private int _nextCustomerId = 1001;
+
+        // Every account number ever handed out, including closed accounts,
+        // so a closed account's number is never reused.
+        private readonly HashSet<string> _usedAccountNumbers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
         public IReadOnlyList<Customer> Customers => _customers;
 
+        // CONSTRUCTOR (parameterized)
         public Bank(string name)
         {
-            Name = name;
+            Name = string.IsNullOrWhiteSpace(name) ? DefaultName : name.Trim();
         }
+
+        // CONSTRUCTOR (default / parameterless): chains to the one above.
+        public Bank() : this(DefaultName)
+        {
+        }
+
+        // Gives out the next customer ID (used when adding a new customer).
+        public int GetNextCustomerId() => _nextCustomerId;
 
         public void AddCustomer(Customer customer)
         {
@@ -35,7 +53,40 @@ namespace BankAccountManager.Models
             {
                 throw new ArgumentNullException(nameof(customer));
             }
+            if (FindCustomer(customer.CustomerId) != null)
+            {
+                throw new InvalidOperationException($"Customer ID {customer.CustomerId} already exists.");
+            }
             _customers.Add(customer);
+            foreach (Account account in customer.Accounts)
+            {
+                _usedAccountNumbers.Add(account.AccountNumber);
+            }
+            if (customer.CustomerId >= _nextCustomerId)
+            {
+                _nextCustomerId = customer.CustomerId + 1;
+            }
+        }
+
+        // Builds the next unused account number for a customer, following the
+        // pattern PREFIX-<customer ID><2-digit sequence>, e.g. "SAV-100503".
+        public string GenerateAccountNumber(Customer customer, string prefix)
+        {
+            int sequence = customer.Accounts.Count + 1;
+            string number = BuildAccountNumber(prefix, customer.CustomerId, sequence);
+            while (FindAccount(number) != null || _usedAccountNumbers.Contains(number))
+            {
+                sequence++;
+                number = BuildAccountNumber(prefix, customer.CustomerId, sequence);
+            }
+            _usedAccountNumbers.Add(number);
+            return number;
+        }
+
+        // ACCESS SPECIFIER - private static: formatting helper used only here.
+        private static string BuildAccountNumber(string prefix, int customerId, int sequence)
+        {
+            return $"{prefix}-{customerId}{sequence:00}";
         }
 
         public Customer? FindCustomer(int customerId)
@@ -47,7 +98,7 @@ namespace BankAccountManager.Models
         {
             foreach (Account account in GetAllAccounts())
             {
-                if (account.AccountNumber.Equals(accountNumber, StringComparison.OrdinalIgnoreCase))
+                if (account.AccountNumber.Equals(accountNumber.Trim(), StringComparison.OrdinalIgnoreCase))
                 {
                     return account;
                 }
@@ -55,9 +106,11 @@ namespace BankAccountManager.Models
             return null;
         }
 
-        // Every account at the bank, as a list of the BASE type Account.
-        // The list really holds CheckingAccount, SavingsAccount, and
-        // MoneyMarketAccount objects (POLYMORPHISM).
+        public Customer? FindOwner(Account account)
+        {
+            return _customers.Find(c => c.OwnsAccount(account));
+        }
+
         public List<Account> GetAllAccounts()
         {
             var all = new List<Account>();
@@ -68,9 +121,6 @@ namespace BankAccountManager.Models
             return all;
         }
 
-        // POLYMORPHISM through the INTERFACE: returns only the accounts that
-        // implement IInterestBearing. The caller doesn't need to know whether
-        // each one is a SavingsAccount or a MoneyMarketAccount.
         public List<IInterestBearing> GetInterestBearingAccounts()
         {
             var list = new List<IInterestBearing>();
