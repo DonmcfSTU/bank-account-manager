@@ -7,7 +7,7 @@
 
 ## About This Project
 
-For my SDC320L course project, I chose the **Bank Account Management Application** option. It's a C# console application that lets a bank employee view customers and their accounts, make deposits and withdrawals, and (in later phases) add, remove, and update customers and accounts. I'm building it in phases over the five-week term, and each phase gets its own GitHub tag.
+For my SDC320L course project, I chose the **Bank Account Management Application** option. It's a C# console application that lets a bank employee view customers and their accounts, make deposits and withdrawals, add, remove, and update customers and accounts, and save everything in an SQLite database. I'm building it in phases over the five-week term, and each phase gets its own GitHub tag.
 
 | Phase | Tag | Focus |
 |-------|-----|-------|
@@ -16,6 +16,19 @@ For my SDC320L course project, I chose the **Bank Account Management Application
 | Week 3 | `Phase-3` | Constructors, access specifiers, abstract classes |
 | Week 4 | `Phase-4` | SQLite database |
 | Week 5 | `Phase-5` | Final project |
+
+## Week 4 Features (Phase 4)
+
+- Header updated to show **Week 4 (Phase 4) - Database Interactions**
+- All data is stored in an **SQLite** database file (`bank.db`) using the `Microsoft.Data.Sqlite` package
+- New `DatabaseManager` class (in `Data/`) is the only class that talks to the database. Every SQL command uses parameters (`@name`) to prevent SQL injection.
+- Three tables: `Customers`, `Accounts` (all three account types, with type-specific columns that are `NULL` when they don't apply), and `Transactions`, linked by foreign keys (`ON DELETE CASCADE` for transactions, `ON DELETE RESTRICT` for customers with accounts)
+- First run: the database is created and filled with the sample data. Every run after that loads the saved data from the database.
+- **CRUD**
+  - **Create:** option 8 (add customer), option 9 (open account)
+  - **Read:** startup load; options 1-3, 6, and 12; option **14** runs `SELECT` queries on the tables directly
+  - **Update:** options 4 and 5 (deposit/withdraw), 7 (month-end), 11 (update customer)
+  - **Delete:** option 10 (delete an account and its transactions, keeping the customer's other accounts), option **13** (delete a customer with no open accounts)
 
 ## Week 3 Features (Phase 3)
 
@@ -43,7 +56,7 @@ For my SDC320L course project, I chose the **Bank Account Management Application
 - List all customers and all accounts in aligned tables
 - View one customer's profile, address, and accounts
 - Deposit and withdraw, with input validation and account-specific rules
-- Sample customers and accounts loaded at startup (a database comes in Week 4)
+- Sample customers and accounts loaded at startup (stored in SQLite starting in Week 4)
 
 ## OOP Concepts Demonstrated
 
@@ -96,7 +109,8 @@ sdc320l-course-project/
 │       ├── UI/
 │       │   └── ConsoleUI.cs        # All console input/output
 │       └── Data/
-│           └── SampleData.cs       # Creates the starting customers
+│           ├── DatabaseManager.cs  # SQLite tables and all CRUD operations
+│           └── SampleData.cs       # Starting customers (saved to the database on first run)
 ├── docs/
 ├── .gitignore
 └── README.md
@@ -106,6 +120,7 @@ sdc320l-course-project/
 
 - .NET SDK 10.0 (if your machine has an older SDK, such as 8.0, change `<TargetFramework>` in `BankAccountManager.csproj` to match, e.g. `net8.0`)
 - Visual Studio Code with the C# Dev Kit extension, or Visual Studio
+- NuGet package `Microsoft.Data.Sqlite` 9.0.23 (already listed in the `.csproj`; `dotnet build` downloads it automatically). It supports .NET 8 and newer.
 
 ## Build and Run
 
@@ -115,6 +130,8 @@ dotnet build
 dotnet run
 ```
 
+The database file `bank.db` is created in the folder you run the program from. Delete `bank.db` to start over with the sample data.
+
 ## How to Use
 
 1. Read the welcome screen and type a menu number, then press Enter.
@@ -123,4 +140,5 @@ dotnet run
 4. Option 6 shows the interest report; option 7 asks for confirmation (Y/N) and then runs month-end processing.
 5. Options 8-11 add a customer, open an account (checking, savings, or money market), close an account (Y/N confirmation), and update a customer (press Enter to keep a value).
 6. Option 12 shows the transaction history for one account.
-7. Type `Q` at the main menu to exit.
+7. Option 13 deletes a customer (only after their accounts are closed), and option 14 shows the rows stored in each database table.
+8. Type `Q` at the main menu to exit. Changes are saved as you make them.
