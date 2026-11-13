@@ -1,8 +1,8 @@
 /*
  * Name:    Donavan D. McFadden
- * Date:    11/29/2026 (updated for Week 3)
+ * Date:    12/13/2026 (final version)
  * Course:  SDC320L - Advanced Object-Oriented Programming Using C#
- * Project: Week 3 - Abstraction, Constructors, & Access Specifiers
+ * Project: Bank Account Manager - Final Project (Week 5)
  *
  * Purpose: CheckingAccount is a concrete DERIVED class of the abstract Account
  *          class. It has a monthly maintenance fee and an overdraft limit,
