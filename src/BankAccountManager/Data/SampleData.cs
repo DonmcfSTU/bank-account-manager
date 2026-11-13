@@ -1,8 +1,8 @@
 /*
  * Name:    Donavan D. McFadden
- * Date:    12/06/2026 (updated for Week 4)
+ * Date:    12/13/2026 (final version)
  * Course:  SDC320L - Advanced Object-Oriented Programming Using C#
- * Project: Week 4 - Database Interactions
+ * Project: Bank Account Manager - Final Project (Week 5)
  *
  * Purpose: SampleData creates the Bank and its starting customers and
  *          accounts (made-up customers for testing).
