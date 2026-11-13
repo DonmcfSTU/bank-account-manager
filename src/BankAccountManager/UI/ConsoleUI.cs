@@ -1,8 +1,8 @@
 /*
  * Name:    Donavan D. McFadden
- * Date:    11/12/2026
+ * Date:    11/12/2026 (updated for Week 2)
  * Course:  SDC320L - Advanced Object-Oriented Programming Using C#
- * Project: Week 1 - Inheritance, Composition, and User Interactions
+ * Project: Week 2 - Software Design; Interfaces & Polymorphism
  *
  * Purpose: ConsoleUI holds all of the methods that write to the screen or
  *          read from the keyboard - the header, welcome message, menu,
@@ -11,6 +11,7 @@
  *          which should make the project easier to grow in later weeks.
  */
 
+using BankAccountManager.Interfaces;
 using BankAccountManager.Models;
 
 namespace BankAccountManager.UI
@@ -23,8 +24,8 @@ namespace BankAccountManager.UI
         public static void ShowHeader()
         {
             Console.WriteLine(new string('=', Width));
-            Console.WriteLine(Center("SDC320L Course Project - WEEK 1 (Phase 1)"));
-            Console.WriteLine(Center("Inheritance, Composition, and User Interactions"));
+            Console.WriteLine(Center("SDC320L Course Project - WEEK 2 (Phase 2)"));
+            Console.WriteLine(Center("Software Design; Interfaces & Polymorphism"));
             Console.WriteLine(Center("Bank Account Management Application"));
             Console.WriteLine(Center("Created by Donavan D. McFadden"));
             Console.WriteLine(new string('=', Width));
@@ -41,6 +42,8 @@ namespace BankAccountManager.UI
             Console.WriteLine("  - Type the number of a menu option and press Enter.");
             Console.WriteLine("  - When asked for a customer, type the Customer ID shown in the customer list.");
             Console.WriteLine("  - When asked for an account, type the account number (example: CHK-100101).");
+            Console.WriteLine("  - Option 6 shows only accounts that earn interest; option 7 runs");
+            Console.WriteLine("    month-end fees and interest for every account.");
             Console.WriteLine("  - Type Q (or Quit) at the main menu to exit.");
         }
 
@@ -53,6 +56,8 @@ namespace BankAccountManager.UI
             Console.WriteLine("  3. View one customer and their accounts");
             Console.WriteLine("  4. Make a deposit");
             Console.WriteLine("  5. Make a withdrawal");
+            Console.WriteLine("  6. Interest report (interest-earning accounts)");
+            Console.WriteLine("  7. Run month-end processing (fees and interest)");
             Console.WriteLine("  Q. Quit");
             Console.WriteLine("-------------------------------------------------------------------");
             Console.WriteLine("  (Add, remove, and update features are coming in later phases.)");
@@ -82,6 +87,41 @@ namespace BankAccountManager.UI
             foreach (Account a in accounts)
             {
                 Console.WriteLine($"{a.AccountNumber,-12}{a.AccountType,-14}{a.OwnerName,-17}{a.DateOpened,-12:MM/dd/yyyy}{a.Balance,13:C}  {a.GetAccountDetails()}");
+            }
+        }
+
+        // POLYMORPHISM through the INTERFACE: this method only knows about
+        // IInterestBearing, not about SavingsAccount or MoneyMarketAccount.
+        // Each object runs its own CalculateMonthlyInterest() version.
+        public static void ShowInterestReport(List<IInterestBearing> accounts)
+        {
+            Console.WriteLine();
+            Console.WriteLine($"{"Account #",-12}{"Type",-14}{"Owner",-17}{"Balance",13}{"Rate",9}{"Est. Monthly Interest",24}");
+            Console.WriteLine(new string('-', 89));
+            decimal total = 0m;
+            foreach (IInterestBearing item in accounts)
+            {
+                // The interface reference is also an Account, so it can be
+                // cast back to read the shared account information.
+                Account account = (Account)item;
+                decimal interest = item.CalculateMonthlyInterest();
+                total += interest;
+                Console.WriteLine($"{account.AccountNumber,-12}{account.AccountType,-14}{account.OwnerName,-17}{account.Balance,13:C}{item.InterestRate,9:P2}{interest,24:C}");
+            }
+            Console.WriteLine(new string('-', 89));
+            Console.WriteLine($"{"Total estimated interest this month:",-65}{total,24:C}");
+            Console.WriteLine("(Money market accounts below their minimum balance earn $0.00.)");
+        }
+
+        // Shows the results of month-end processing for each account.
+        public static void ShowMonthEndResults(List<(Account Account, decimal Before, string Result)> results)
+        {
+            Console.WriteLine();
+            Console.WriteLine($"{"Account #",-12}{"Type",-14}{"Before",13}{"After",13}  {"What happened"}");
+            Console.WriteLine(new string('-', Width));
+            foreach (var r in results)
+            {
+                Console.WriteLine($"{r.Account.AccountNumber,-12}{r.Account.AccountType,-14}{r.Before,13:C}{r.Account.Balance,13:C}  {r.Result}");
             }
         }
 
