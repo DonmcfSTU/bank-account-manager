@@ -17,6 +17,15 @@ For my SDC320L course project, I chose the **Bank Account Management Application
 | Week 4 | `Phase-4` | SQLite database |
 | Week 5 | `Phase-5` | Final project |
 
+## Week 3 Features (Phase 3)
+
+- Header updated to show **Week 3 (Phase 3)**
+- **Abstraction:** `Account` is now an `abstract` class. `AccountType`, `GetAccountDetails()`, `ProcessMonthEnd()`, and the protected `CanWithdraw()` rule are abstract, so every account type must provide them. `Withdraw()` is written once in the base class and asks the child's `CanWithdraw()` rule.
+- **Constructors:** multiple constructors per class with `: this(...)` chaining and `: base(...)` calls, protected constructors on the abstract class, a parameterless `Bank()` constructor, a copy constructor on `Address`, and internal constructors on `Transaction`
+- **Access specifiers:** public setters replaced with `private set` + validated update methods; balance can only change through the protected `PostTransaction()` method; private helpers; `internal` members used only inside the project
+- New `Transaction` class and `TransactionType` enum - every account keeps its own transaction history (composition)
+- New menu options: **8** add customer, **9** open account, **10** close account, **11** update customer, **12** transaction history
+
 ## Week 2 Features (Phase 2)
 
 - Header updated to show **Week 2 (Phase 2)**
@@ -76,7 +85,9 @@ sdc320l-course-project/
 │       │   └── IInterestBearing.cs # Interface for interest-earning accounts
 │       ├── Models/
 │       │   ├── Bank.cs             # Holds all customers (composition)
-│       │   ├── Account.cs          # Base class
+│       │   ├── Account.cs          # Abstract base class
+│       │   ├── Transaction.cs      # One entry in an account's history
+│       │   ├── TransactionType.cs  # Enum of transaction kinds
 │       │   ├── CheckingAccount.cs  # Derived class
 │       │   ├── SavingsAccount.cs   # Derived class, implements IInterestBearing
 │       │   ├── MoneyMarketAccount.cs # Derived from SavingsAccount
@@ -110,4 +121,6 @@ dotnet run
 2. For option 3, type a Customer ID from the list (example: `1003`).
 3. For options 4 and 5, type an account number (example: `CHK-100101`) and a dollar amount.
 4. Option 6 shows the interest report; option 7 asks for confirmation (Y/N) and then runs month-end processing.
-5. Type `Q` at the main menu to exit.
+5. Options 8-11 add a customer, open an account (checking, savings, or money market), close an account (Y/N confirmation), and update a customer (press Enter to keep a value).
+6. Option 12 shows the transaction history for one account.
+7. Type `Q` at the main menu to exit.
