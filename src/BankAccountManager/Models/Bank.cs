@@ -1,14 +1,16 @@
 /*
  * Name:    Donavan D. McFadden
- * Date:    12/06/2026 (updated for Week 4)
+ * Date:    12/13/2026 (final version)
  * Course:  SDC320L - Advanced Object-Oriented Programming Using C#
- * Project: Week 4 - Database Interactions
+ * Project: Bank Account Manager - Final Project (Week 5)
  *
  * Purpose: The Bank class holds all customers and is the main entry point for
  *          finding, adding, and removing customers and accounts.
  *          Week 3: added a default constructor, automatic customer IDs and
  *          account numbers (kept private), and methods to open and close
  *          accounts.
+ *          Final: ReserveAccountNumber()/ReserveCustomerId() keep deleted
+ *          numbers from being reused after the program restarts.
  *          Week 4: added RemoveCustomer() so a customer can be deleted (the
  *          Bank and the database both refuse if the customer has accounts).
  */
@@ -67,6 +69,23 @@ namespace BankAccountManager.Models
             if (customer.CustomerId >= _nextCustomerId)
             {
                 _nextCustomerId = customer.CustomerId + 1;
+            }
+        }
+
+        // Final version: the database remembers every account number and
+        // customer ID that was ever deleted, and DatabaseManager hands them
+        // back here on startup so they are never given to someone new.
+        // ACCESS SPECIFIER - internal: only the database layer calls these.
+        internal void ReserveAccountNumber(string accountNumber)
+        {
+            _usedAccountNumbers.Add(accountNumber);
+        }
+
+        internal void ReserveCustomerId(int customerId)
+        {
+            if (customerId >= _nextCustomerId)
+            {
+                _nextCustomerId = customerId + 1;
             }
         }
 
