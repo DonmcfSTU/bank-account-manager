@@ -1,11 +1,11 @@
 /*
  * Name:    Donavan D. McFadden
- * Date:    11/12/2026
+ * Date:    11/12/2026 (updated for Week 2)
  * Course:  SDC320L - Advanced Object-Oriented Programming Using C#
- * Project: Week 1 - Inheritance, Composition, and User Interactions
+ * Project: Week 2 - Software Design; Interfaces & Polymorphism
  *
- * Purpose: SampleData creates the starting customers and accounts for the
- *          Week 1 demo. Each customer is built with an Address object and
+ * Purpose: SampleData creates the bank and its starting customers and
+ *          accounts for the demo. Each customer is built with an Address object and
  *          one or more accounts of different types. (These are made-up
  *          customers for testing.) In Week 4 this data will come from an
  *          SQLite database instead.
@@ -17,9 +17,9 @@ namespace BankAccountManager.Data
 {
     public static class SampleData
     {
-        public static List<Customer> CreateCustomers()
+        public static Bank CreateBank()
         {
-            var customers = new List<Customer>();
+            var bank = new Bank("McFadden Community Bank");
 
             // Customer 1 - COMPOSITION: the Address object is created and
             // handed to the Customer, which then "owns" it.
@@ -32,7 +32,7 @@ namespace BankAccountManager.Data
                 new DateTime(2023, 3, 14), 5.00m, 250.00m));
             maria.AddAccount(new SavingsAccount("SAV-100102", 8200.00m,
                 new DateTime(2023, 3, 14), 0.0425m));
-            customers.Add(maria);
+            bank.AddCustomer(maria);
 
             // Customer 2
             var james = new Customer(1002, "James", "Carter", "(804) 555-0198",
@@ -42,7 +42,7 @@ namespace BankAccountManager.Data
                 new DateTime(2024, 8, 2), 0.00m, 100.00m));
             james.AddAccount(new MoneyMarketAccount("MMA-100202", 15000.00m,
                 new DateTime(2024, 8, 2), 0.0480m, 2500.00m));
-            customers.Add(james);
+            bank.AddCustomer(james);
 
             // Customer 3
             var aisha = new Customer(1003, "Aisha", "Thompson", "(757) 555-0167",
@@ -54,9 +54,21 @@ namespace BankAccountManager.Data
                 new DateTime(2025, 1, 9), 5.00m, 250.00m));
             aisha.AddAccount(new MoneyMarketAccount("MMA-100303", 6400.00m,
                 new DateTime(2025, 6, 18), 0.0465m, 2500.00m));
-            customers.Add(aisha);
+            bank.AddCustomer(aisha);
 
-            return customers;
+            // Customer 4 - added in Week 2. His money market account is
+            // below the minimum, so month-end processing will charge a
+            // low-balance fee instead of paying interest.
+            var derrick = new Customer(1004, "Derrick", "Owens", "(757) 555-0113",
+                "dowens@example.com",
+                new Address("315 Granby St", "Norfolk", "VA", "23510"));
+            derrick.AddAccount(new CheckingAccount("CHK-100401", 942.18m,
+                new DateTime(2021, 5, 21), 5.00m, 250.00m));
+            derrick.AddAccount(new MoneyMarketAccount("MMA-100402", 1850.00m,
+                new DateTime(2021, 5, 21), 0.0450m, 2500.00m));
+            bank.AddCustomer(derrick);
+
+            return bank;
         }
     }
 }
