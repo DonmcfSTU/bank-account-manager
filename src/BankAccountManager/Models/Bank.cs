@@ -1,14 +1,16 @@
 /*
  * Name:    Donavan D. McFadden
- * Date:    11/29/2026 (updated for Week 3)
+ * Date:    12/06/2026 (updated for Week 4)
  * Course:  SDC320L - Advanced Object-Oriented Programming Using C#
- * Project: Week 3 - Abstraction, Constructors, & Access Specifiers
+ * Project: Week 4 - Database Interactions
  *
  * Purpose: The Bank class holds all customers and is the main entry point for
  *          finding, adding, and removing customers and accounts.
  *          Week 3: added a default constructor, automatic customer IDs and
  *          account numbers (kept private), and methods to open and close
  *          accounts.
+ *          Week 4: added RemoveCustomer() so a customer can be deleted (the
+ *          Bank and the database both refuse if the customer has accounts).
  */
 
 using BankAccountManager.Interfaces;
@@ -66,6 +68,22 @@ namespace BankAccountManager.Models
             {
                 _nextCustomerId = customer.CustomerId + 1;
             }
+        }
+
+        // Removes a customer. Only allowed when all of their accounts are
+        // closed, so no money or account history is ever left without an owner.
+        public void RemoveCustomer(Customer customer)
+        {
+            if (!_customers.Contains(customer))
+            {
+                throw new InvalidOperationException("That customer is not in this bank.");
+            }
+            if (customer.Accounts.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    $"{customer.FullName} still has {customer.Accounts.Count} open account(s). Close them first (option 10).");
+            }
+            _customers.Remove(customer);
         }
 
         // Builds the next unused account number for a customer, following the
