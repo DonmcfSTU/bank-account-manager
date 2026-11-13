@@ -1,8 +1,8 @@
 /*
  * Name:    Donavan D. McFadden
- * Date:    11/29/2026 (updated for Week 3)
+ * Date:    12/06/2026 (updated for Week 4)
  * Course:  SDC320L - Advanced Object-Oriented Programming Using C#
- * Project: Week 3 - Abstraction, Constructors, & Access Specifiers
+ * Project: Week 4 - Database Interactions
  *
  * Purpose: ConsoleUI holds all of the methods that write to the screen or
  *          read from the keyboard - the header, welcome message, menu,
@@ -10,6 +10,9 @@
  *          Models classes don't need to know anything about the console.
  *          Week 3: Week 3 header, menu options 8-12, transaction history
  *          table, and new prompt helpers for adding/updating information.
+ *          Week 4: Week 4 header, database instructions in the welcome
+ *          message, menu options 13-14, and ShowRows() for displaying rows
+ *          read straight from the SQLite tables.
  */
 
 using BankAccountManager.Interfaces;
@@ -26,8 +29,8 @@ namespace BankAccountManager.UI
         public static void ShowHeader()
         {
             Console.WriteLine(new string('=', Width));
-            Console.WriteLine(Center("SDC320L Course Project - WEEK 3 (Phase 3)"));
-            Console.WriteLine(Center("Abstraction, Constructors, & Access Specifiers"));
+            Console.WriteLine(Center("SDC320L Course Project - WEEK 4 (Phase 4)"));
+            Console.WriteLine(Center("Database Interactions"));
             Console.WriteLine(Center("Bank Account Management Application"));
             Console.WriteLine(Center("Created by Donavan D. McFadden"));
             Console.WriteLine(new string('=', Width));
@@ -43,9 +46,13 @@ namespace BankAccountManager.UI
             Console.WriteLine("  - Type the number of a menu option and press Enter.");
             Console.WriteLine("  - Pick customers by Customer ID (example: 1003) and accounts by account");
             Console.WriteLine("    number (example: CHK-100101). The list is shown first so you can look it up.");
+            Console.WriteLine("  - Everything is stored in an SQLite database file (bank.db). Every add,");
+            Console.WriteLine("    deposit, withdrawal, update, and delete is saved right away, so your");
+            Console.WriteLine("    data is still there the next time you start the program.");
             Console.WriteLine("  - Options 8-11 add customers, open and close accounts, and update customers.");
             Console.WriteLine("    When updating, press Enter on any field to keep its current value.");
-            Console.WriteLine("  - Option 12 shows the transaction history for one account.");
+            Console.WriteLine("  - Option 12 shows one account's history. Option 13 deletes a customer");
+            Console.WriteLine("    (close their accounts first). Option 14 shows the raw database tables.");
             Console.WriteLine("  - Type Q (or Quit) at the main menu to exit.");
         }
 
@@ -56,10 +63,11 @@ namespace BankAccountManager.UI
             Console.WriteLine("  1. List all customers              7. Run month-end processing");
             Console.WriteLine("  2. List all accounts               8. Add a new customer");
             Console.WriteLine("  3. View one customer               9. Open a new account");
-            Console.WriteLine("  4. Make a deposit                 10. Close (remove) an account");
+            Console.WriteLine("  4. Make a deposit                 10. Close (delete) an account");
             Console.WriteLine("  5. Make a withdrawal              11. Update customer information");
             Console.WriteLine("  6. Interest report                12. View account transaction history");
-            Console.WriteLine("  Q. Quit");
+            Console.WriteLine("  Q. Quit                           13. Delete a customer");
+            Console.WriteLine("                                    14. View database records (SQLite)");
             Console.WriteLine("-------------------------------------------------------------------");
         }
 
@@ -145,6 +153,35 @@ namespace BankAccountManager.UI
             }
             Console.WriteLine(new string('-', 89));
             Console.WriteLine($"{"Current balance:",-75}{account.Balance,14:C}");
+        }
+
+        // Week 4: prints rows that came straight from a SELECT query. Each
+        // column has a header and a width; long values are shortened to fit.
+        public static void ShowRows(string title, (string Header, int Width)[] columns, List<string[]> rows)
+        {
+            Console.WriteLine();
+            Console.WriteLine($"{title}   ({rows.Count} row{(rows.Count == 1 ? "" : "s")})");
+            Console.WriteLine();
+            int total = 0;
+            foreach (var col in columns)
+            {
+                Console.Write(col.Header.PadRight(col.Width));
+                total += col.Width;
+            }
+            Console.WriteLine();
+            Console.WriteLine(new string('-', total));
+            foreach (string[] row in rows)
+            {
+                for (int i = 0; i < columns.Length && i < row.Length; i++)
+                {
+                    Console.Write(Fit(row[i], columns[i].Width - 1).PadRight(columns[i].Width));
+                }
+                Console.WriteLine();
+            }
+            if (rows.Count == 0)
+            {
+                Console.WriteLine("(no rows found)");
+            }
         }
 
         public static string Prompt(string message)
