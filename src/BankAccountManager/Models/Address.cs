@@ -1,38 +1,66 @@
 /*
  * Name:    Donavan D. McFadden
- * Date:    11/12/2026 (updated for Week 2)
+ * Date:    11/29/2026 (updated for Week 3)
  * Course:  SDC320L - Advanced Object-Oriented Programming Using C#
- * Project: Week 2 - Software Design; Interfaces & Polymorphism
+ * Project: Week 3 - Abstraction, Constructors, & Access Specifiers
  *
- * Purpose: The Address class stores a customer's mailing address
- *          (street, city, state, and ZIP code). It doesn't do much on its
- *          own - it exists so the Customer class can be built out of
- *          smaller pieces. Customer "has an" Address, which is how I
- *          demonstrate composition in this project.
+ * Purpose: The Address class stores a customer's mailing address. Customer
+ *          "has an" Address (COMPOSITION).
+ *          Week 3: properties are now read-only (an address is replaced as a
+ *          whole when a customer moves), the constructor validates input,
+ *          and a COPY CONSTRUCTOR was added.
  */
 
 namespace BankAccountManager.Models
 {
     public class Address
     {
-        public string Street { get; set; }
-        public string City { get; set; }
-        public string State { get; set; }
-        public string ZipCode { get; set; }
+        // ACCESS SPECIFIERS: public get-only. Once an Address is created it
+        // can't be partly changed - that prevents half-updated addresses.
+        public string Street { get; }
+        public string City { get; }
+        public string State { get; }
+        public string ZipCode { get; }
 
+        // CONSTRUCTOR (main): validates and cleans up the values.
         public Address(string street, string city, string state, string zipCode)
         {
-            Street = street;
-            City = city;
-            State = state;
-            ZipCode = zipCode;
+            Street = Require(street, "Street");
+            City = Require(city, "City");
+            State = Require(state, "State").ToUpper();
+            ZipCode = Require(zipCode, "ZIP code");
+
+            if (State.Length != 2)
+            {
+                throw new ArgumentException("State must be a 2-letter abbreviation (example: VA).");
+            }
+            if (ZipCode.Length != 5 || !ZipCode.All(char.IsDigit))
+            {
+                throw new ArgumentException("ZIP code must be 5 digits.");
+            }
         }
 
-        // Returns the address on one line, for example:
-        // "4100 Monument Ave, Richmond, VA 23230"
+        // COPY CONSTRUCTOR: makes a new Address with the same values as another
+        // one. Customer uses this so it keeps its OWN copy of the address
+        // (composition - the customer owns its parts).
+        public Address(Address other)
+            : this(other.Street, other.City, other.State, other.ZipCode)
+        {
+        }
+
         public override string ToString()
         {
             return $"{Street}, {City}, {State} {ZipCode}";
+        }
+
+        // ACCESS SPECIFIER - private static: input check used only here.
+        private static string Require(string value, string fieldName)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                throw new ArgumentException($"{fieldName} is required.");
+            }
+            return value.Trim();
         }
     }
 }
