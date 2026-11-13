@@ -1,8 +1,8 @@
 /*
  * Name:    Donavan D. McFadden
- * Date:    11/12/2026
+ * Date:    11/12/2026 (updated for Week 2)
  * Course:  SDC320L - Advanced Object-Oriented Programming Using C#
- * Project: Week 1 - Inheritance, Composition, and User Interactions
+ * Project: Week 2 - Software Design; Interfaces & Polymorphism
  *
  * Purpose: The Address class stores a customer's mailing address
  *          (street, city, state, and ZIP code). It doesn't do much on its
