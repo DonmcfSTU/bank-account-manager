@@ -1,8 +1,8 @@
 /*
  * Name:    Donavan D. McFadden
- * Date:    11/29/2026 (updated for Week 3)
+ * Date:    12/06/2026 (updated for Week 4)
  * Course:  SDC320L - Advanced Object-Oriented Programming Using C#
- * Project: Week 3 - Abstraction, Constructors, & Access Specifiers
+ * Project: Week 4 - Database Interactions
  *
  * Purpose: Account is the ABSTRACT BASE CLASS for every type of bank account.
  *          It holds what all accounts share (account number, owner, date
@@ -18,6 +18,10 @@
  *            through the protected PostTransaction() method, so every balance
  *            change is recorded in the transaction history.
  *          - Constructors are protected and chained.
+ *
+ *          Week 4 changes:
+ *          - Added the internal RestoreHistory() method so the database layer
+ *            can rebuild an account with its saved balance and transactions.
  */
 
 namespace BankAccountManager.Models
@@ -106,6 +110,23 @@ namespace BankAccountManager.Models
                 PostTransaction(TransactionType.Closing, -payout, "Account closed - balance paid out");
             }
             return payout;
+        }
+
+        // Week 4: used only by DatabaseManager when it loads an account from
+        // SQLite. The constructor records a new "Account opened" transaction,
+        // so this swaps in the real saved history and balance instead.
+        // ACCESS SPECIFIER - internal: only code inside this project (the
+        // database layer) may do this; the menu and outside code can't.
+        internal void RestoreHistory(decimal balance, IEnumerable<Transaction> savedHistory)
+        {
+            var history = new List<Transaction>(savedHistory);
+            if (history.Count == 0)
+            {
+                throw new ArgumentException("An account must have at least one transaction.");
+            }
+            _transactions.Clear();
+            _transactions.AddRange(history);
+            _balance = balance;
         }
 
         // ABSTRACTION: each account type decides if a withdrawal is allowed.
