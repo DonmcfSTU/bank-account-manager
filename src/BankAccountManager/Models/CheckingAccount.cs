@@ -1,62 +1,92 @@
 /*
  * Name:    Donavan D. McFadden
- * Date:    11/12/2026 (updated for Week 2)
+ * Date:    11/29/2026 (updated for Week 3)
  * Course:  SDC320L - Advanced Object-Oriented Programming Using C#
- * Project: Week 2 - Software Design; Interfaces & Polymorphism
+ * Project: Week 3 - Abstraction, Constructors, & Access Specifiers
  *
- * Purpose: CheckingAccount is a DERIVED (child) class of Account. It adds a
- *          monthly maintenance fee and an overdraft limit. It does NOT earn
- *          interest, so it does not implement IInterestBearing.
- *          Week 2: overrides ProcessMonthEnd() to charge the monthly fee.
+ * Purpose: CheckingAccount is a concrete DERIVED class of the abstract Account
+ *          class. It has a monthly maintenance fee and an overdraft limit,
+ *          and it fills in the abstract methods with checking-account rules.
+ *          It does not earn interest, so it does not implement IInterestBearing.
  */
 
 namespace BankAccountManager.Models
 {
-    // INHERITANCE: CheckingAccount IS-AN Account.
+    // INHERITANCE: CheckingAccount IS-AN Account (concrete class).
     public class CheckingAccount : Account
     {
-        public decimal MonthlyFee { get; set; }
-        public decimal OverdraftLimit { get; set; }
+        // Default values used by the shorter constructor. Private const because
+        // nothing outside this class needs them.
+        private const decimal DefaultMonthlyFee = 5.00m;
+        private const decimal DefaultOverdraftLimit = 250.00m;
 
-        // ": base(...)" passes the shared values up to the Account constructor.
+        // ACCESS SPECIFIERS: public get so the screen can show them, private
+        // set so they can only be set by the constructor or ChangeFee().
+        public decimal MonthlyFee { get; private set; }
+        public decimal OverdraftLimit { get; private set; }
+
+        public override string AccountType => "Checking";
+
+        // CONSTRUCTOR (full): used when loading existing accounts with a known
+        // open date, fee, and overdraft limit. ": base(...)" calls Account's
+        // protected constructor.
         public CheckingAccount(string accountNumber, decimal openingBalance, DateTime dateOpened,
                                decimal monthlyFee, decimal overdraftLimit)
             : base(accountNumber, openingBalance, dateOpened)
         {
-            AccountType = "Checking";
+            if (monthlyFee < 0 || overdraftLimit < 0)
+            {
+                throw new ArgumentException("Fee and overdraft limit cannot be negative.");
+            }
             MonthlyFee = monthlyFee;
             OverdraftLimit = overdraftLimit;
         }
 
-        // POLYMORPHISM (override): checking accounts can go below zero,
-        // up to the overdraft limit.
-        public override void Withdraw(decimal amount)
+        // CONSTRUCTOR (overload): used when a customer opens a new checking
+        // account from the menu. It chains to the full constructor with today's
+        // date and the standard fee and overdraft limit.
+        public CheckingAccount(string accountNumber, decimal openingBalance)
+            : this(accountNumber, openingBalance, DateTime.Today, DefaultMonthlyFee, DefaultOverdraftLimit)
         {
-            if (amount <= 0)
-            {
-                throw new ArgumentException("Withdrawal amount must be greater than zero.");
-            }
-            if (amount > Balance + OverdraftLimit)
-            {
-                throw new InvalidOperationException("Withdrawal exceeds the overdraft limit.");
-            }
-            Balance -= amount;
         }
 
-        // POLYMORPHISM (override): checking-specific details.
+        // Public method instead of a public setter, so the rule (no negative
+        // fee) is always checked.
+        public void ChangeFee(decimal newFee)
+        {
+            if (newFee < 0)
+            {
+                throw new ArgumentException("Fee cannot be negative.");
+            }
+            MonthlyFee = newFee;
+        }
+
+        // ABSTRACTION (implemented): checking can go negative up to the limit.
+        protected override bool CanWithdraw(decimal amount, out string reason)
+        {
+            if (amount > Balance + OverdraftLimit)
+            {
+                reason = $"Withdrawal exceeds the {OverdraftLimit:C} overdraft limit.";
+                return false;
+            }
+            reason = string.Empty;
+            return true;
+        }
+
+        // ABSTRACTION (implemented)
         public override string GetAccountDetails()
         {
             return $"Fee {MonthlyFee:C}/mo, Overdraft {OverdraftLimit:C}";
         }
 
-        // POLYMORPHISM (override): month-end for checking = charge the fee.
+        // ABSTRACTION (implemented): month-end for checking = charge the fee.
         public override string ProcessMonthEnd()
         {
             if (MonthlyFee == 0)
             {
                 return "No monthly fee (fee waived)";
             }
-            Balance -= MonthlyFee;
+            PostTransaction(TransactionType.Fee, -MonthlyFee, "Monthly maintenance fee");
             return $"Charged monthly fee of {MonthlyFee:C}";
         }
     }
