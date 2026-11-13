@@ -1,8 +1,8 @@
 /*
  * Name:    Donavan D. McFadden
- * Date:    12/06/2026 (updated for Week 4)
+ * Date:    12/13/2026 (final version)
  * Course:  SDC320L - Advanced Object-Oriented Programming Using C#
- * Project: Week 4 - Database Interactions
+ * Project: Bank Account Manager - Final Project (Week 5)
  *
  * Purpose: Program is the starting point of the Bank Account Management
  *          application. It shows the header and welcome message, creates the
@@ -12,6 +12,8 @@
  *          account, update customer, transaction history). These use the new
  *          constructor overloads and the update methods that replaced the
  *          old public setters.
+ *          Final version: the header shows the application name, and
+ *          option 14 can also show the retired numbers/IDs table.
  *          Week 4: all data is now stored in an SQLite database (bank.db)
  *          through the DatabaseManager class. On startup the program loads
  *          the Bank from the database (or creates the database and saves the
@@ -251,8 +253,10 @@ namespace BankAccountManager
                     ConsoleUI.PromptRequired("Email"),
                     ConsoleUI.PromptRequired("Street"),
                     ConsoleUI.PromptRequired("City"),
-                    ConsoleUI.PromptRequired("State (2 letters)"),
-                    ConsoleUI.PromptRequired("ZIP code"));
+                    ConsoleUI.PromptValidated("State (2 letters)",
+                        v => v.Length == 2 && v.All(char.IsLetter), "State must be a 2-letter abbreviation (example: VA)."),
+                    ConsoleUI.PromptValidated("ZIP code",
+                        v => v.Length == 5 && v.All(char.IsDigit), "ZIP code must be 5 digits."));
                 // CREATE: INSERT into the Customers table first. If the
                 // database refuses it, the customer is not added in memory.
                 if (!SaveToDatabase(() => _db.InsertCustomer(customer)))
@@ -432,7 +436,8 @@ namespace BankAccountManager
                 Console.WriteLine("  1. Customers");
                 Console.WriteLine("  2. Accounts");
                 Console.WriteLine("  3. Transactions for one account");
-                switch (ConsoleUI.Prompt("Choose 1-3: "))
+                Console.WriteLine("  4. Retired account numbers and customer IDs");
+                switch (ConsoleUI.Prompt("Choose 1-4: "))
                 {
                     case "1":
                         ConsoleUI.ShowRows("SELECT * FROM Customers",
@@ -451,8 +456,13 @@ namespace BankAccountManager
                             new[] { ("ID", 5), ("TransDate", 17), ("TransType", 15), ("Amount", 11), ("BalanceAfter", 13), ("Description", 34) },
                             _db.GetTransactionRows(number));
                         break;
+                    case "4":
+                        ConsoleUI.ShowRows("SELECT * FROM RetiredIds",
+                            new[] { ("IdType", 10), ("IdValue", 14), ("RetiredOn", 17) },
+                            _db.GetRetiredRows());
+                        break;
                     default:
-                        ConsoleUI.ShowError("Please choose 1, 2, or 3.");
+                        ConsoleUI.ShowError("Please choose 1, 2, 3, or 4.");
                         break;
                 }
             }
