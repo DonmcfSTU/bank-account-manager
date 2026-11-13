@@ -1,8 +1,8 @@
 /*
  * Name:    Donavan D. McFadden
- * Date:    12/06/2026
+ * Date:    12/13/2026 (final version)
  * Course:  SDC320L - Advanced Object-Oriented Programming Using C#
- * Project: Week 4 - Database Interactions
+ * Project: Bank Account Manager - Final Project (Week 5)
  *
  * Purpose: DatabaseManager is the only class that talks to the SQLite
  *          database (bank.db). It creates the tables, saves the sample data
@@ -14,6 +14,9 @@
  *                     GetAccountRows(), GetTransactionRows()
  *            Update - UpdateCustomer(), SaveAccountActivity()
  *            Delete - DeleteAccount(), DeleteCustomer()
+ *          Final version: added the RetiredIds table. When an account or
+ *          customer is deleted, its number/ID is recorded there so it is
+ *          never reused (real banks don't reuse account numbers either).
  *          Every SQL command uses parameters (@name) instead of gluing user
  *          input into the SQL string, which prevents SQL injection.
  *
@@ -25,6 +28,7 @@
  *                           and the type-specific columns are NULL when they
  *                           don't apply (e.g. MonthlyFee for a savings account).
  *            Transactions - one row per Transaction, linked to its account.
+ *            RetiredIds   - account numbers and customer IDs that were deleted.
  */
 
 using System.Globalization;
@@ -108,6 +112,12 @@ namespace BankAccountManager.Data
                     Amount          NUMERIC NOT NULL,
                     BalanceAfter    NUMERIC NOT NULL,
                     Description     TEXT NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS RetiredIds (
+                    IdType      TEXT NOT NULL CHECK (IdType IN ('Account', 'Customer')),
+                    IdValue     TEXT NOT NULL,
+                    RetiredOn   TEXT NOT NULL,
+                    PRIMARY KEY (IdType, IdValue)
                 );");
 
             using SqliteCommand count = connection.CreateCommand();
@@ -251,6 +261,25 @@ namespace BankAccountManager.Data
             {
                 bank.AddCustomer(customer);
             }
+
+            // Numbers and IDs from deleted records are reserved so they are
+            // never handed out again.
+            using (SqliteCommand cmd = connection.CreateCommand())
+            {
+                cmd.CommandText = "SELECT IdType, IdValue FROM RetiredIds;";
+                using SqliteDataReader r = cmd.ExecuteReader();
+                while (r.Read())
+                {
+                    if (r.GetString(0) == "Account")
+                    {
+                        bank.ReserveAccountNumber(r.GetString(1));
+                    }
+                    else if (int.TryParse(r.GetString(1), out int id))
+                    {
+                        bank.ReserveCustomerId(id);
+                    }
+                }
+            }
             return bank;
         }
 
@@ -280,6 +309,12 @@ namespace BankAccountManager.Data
                                   CASE WHEN InterestRate IS NULL THEN 'NULL' ELSE printf('%.4f', InterestRate) END,
                                   CASE WHEN MinimumBalance IS NULL THEN 'NULL' ELSE printf('%.2f', MinimumBalance) END
                            FROM Accounts ORDER BY CustomerId, rowid;", null);
+        }
+
+        public List<string[]> GetRetiredRows()
+        {
+            return Query(@"SELECT IdType, IdValue, substr(RetiredOn, 1, 16)
+                           FROM RetiredIds ORDER BY RetiredOn, IdType, IdValue;", null);
         }
 
         // READ with a WHERE clause: transactions for one account number.
@@ -348,16 +383,22 @@ namespace BankAccountManager.Data
         // ------------------------------------------------------------------
 
         // Deletes the account row. ON DELETE CASCADE removes its transactions too.
+        // The account number is also recorded in RetiredIds (same SQL
+        // transaction) so it is never reused.
         public void DeleteAccount(string accountNumber)
         {
             using SqliteConnection connection = OpenConnection();
+            using SqliteTransaction tx = connection.BeginTransaction();
             using SqliteCommand cmd = connection.CreateCommand();
+            cmd.Transaction = tx;
             cmd.CommandText = "DELETE FROM Accounts WHERE AccountNumber = @number;";
             cmd.Parameters.AddWithValue("@number", accountNumber);
             if (cmd.ExecuteNonQuery() != 1)
             {
                 throw new InvalidOperationException($"Account {accountNumber} is not in the database.");
             }
+            RetireId(connection, tx, "Account", accountNumber);
+            tx.Commit();
         }
 
         // Deletes a customer. ON DELETE RESTRICT makes SQLite refuse this if the
@@ -365,13 +406,17 @@ namespace BankAccountManager.Data
         public void DeleteCustomer(int customerId)
         {
             using SqliteConnection connection = OpenConnection();
+            using SqliteTransaction tx = connection.BeginTransaction();
             using SqliteCommand cmd = connection.CreateCommand();
+            cmd.Transaction = tx;
             cmd.CommandText = "DELETE FROM Customers WHERE CustomerId = @id;";
             cmd.Parameters.AddWithValue("@id", customerId);
             if (cmd.ExecuteNonQuery() != 1)
             {
                 throw new InvalidOperationException($"Customer {customerId} is not in the database.");
             }
+            RetireId(connection, tx, "Customer", customerId.ToString(CultureInfo.InvariantCulture));
+            tx.Commit();
         }
 
         // ------------------------------------------------------------------
@@ -505,6 +550,18 @@ namespace BankAccountManager.Data
                 cmd.Parameters.AddWithValue("@description", t.Description);
                 cmd.ExecuteNonQuery();
             }
+        }
+
+        private static void RetireId(SqliteConnection connection, SqliteTransaction tx, string type, string value)
+        {
+            using SqliteCommand cmd = connection.CreateCommand();
+            cmd.Transaction = tx;
+            cmd.CommandText = @"INSERT OR IGNORE INTO RetiredIds (IdType, IdValue, RetiredOn)
+                                VALUES (@type, @value, @date);";
+            cmd.Parameters.AddWithValue("@type", type);
+            cmd.Parameters.AddWithValue("@value", value);
+            cmd.Parameters.AddWithValue("@date", DateTime.Now.ToString(DateFormat, CultureInfo.InvariantCulture));
+            cmd.ExecuteNonQuery();
         }
 
         private static DateTime ParseDate(string text)
