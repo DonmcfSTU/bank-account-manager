@@ -1,8 +1,8 @@
 /*
  * Name:    Donavan D. McFadden
- * Date:    11/29/2026
+ * Date:    12/13/2026 (final version)
  * Course:  SDC320L - Advanced Object-Oriented Programming Using C#
- * Project: Week 3 - Abstraction, Constructors, & Access Specifiers
+ * Project: Bank Account Manager - Final Project (Week 5)
  *
  * Purpose: TransactionType is an enum that lists the kinds of activity that
  *          can happen on an account. Using an enum instead of plain strings
