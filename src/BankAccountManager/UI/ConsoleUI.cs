@@ -1,8 +1,8 @@
 /*
  * Name:    Donavan D. McFadden
- * Date:    12/06/2026 (updated for Week 4)
+ * Date:    12/13/2026 (final version)
  * Course:  SDC320L - Advanced Object-Oriented Programming Using C#
- * Project: Week 4 - Database Interactions
+ * Project: Bank Account Manager - Final Project (Week 5)
  *
  * Purpose: ConsoleUI holds all of the methods that write to the screen or
  *          read from the keyboard - the header, welcome message, menu,
@@ -10,6 +10,7 @@
  *          Models classes don't need to know anything about the console.
  *          Week 3: Week 3 header, menu options 8-12, transaction history
  *          table, and new prompt helpers for adding/updating information.
+ *          Final version: final header with the application name.
  *          Week 4: Week 4 header, database instructions in the welcome
  *          message, menu options 13-14, and ShowRows() for displaying rows
  *          read straight from the SQLite tables.
@@ -29,9 +30,9 @@ namespace BankAccountManager.UI
         public static void ShowHeader()
         {
             Console.WriteLine(new string('=', Width));
-            Console.WriteLine(Center("SDC320L Course Project - WEEK 4 (Phase 4)"));
-            Console.WriteLine(Center("Database Interactions"));
-            Console.WriteLine(Center("Bank Account Management Application"));
+            Console.WriteLine(Center("BANK ACCOUNT MANAGER"));
+            Console.WriteLine(Center("Final Project - Application Delivery (Week 5)"));
+            Console.WriteLine(Center("McFadden Community Bank - Account Management System"));
             Console.WriteLine(Center("Created by Donavan D. McFadden"));
             Console.WriteLine(new string('=', Width));
         }
@@ -201,6 +202,21 @@ namespace BankAccountManager.UI
                     return value;
                 }
                 ShowError($"  {label} is required.");
+            }
+        }
+
+        // Final version: keeps asking until the value passes the check, so a
+        // typo only means re-typing that one field (used for state and ZIP).
+        public static string PromptValidated(string label, Func<string, bool> isValid, string errorMessage)
+        {
+            while (true)
+            {
+                string value = PromptRequired(label);
+                if (isValid(value))
+                {
+                    return value;
+                }
+                ShowError($"  {errorMessage}");
             }
         }
 
