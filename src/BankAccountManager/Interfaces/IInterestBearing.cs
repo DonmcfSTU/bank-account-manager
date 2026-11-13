@@ -1,8 +1,8 @@
 /*
  * Name:    Donavan D. McFadden
- * Date:    11/12/2026
+ * Date:    11/29/2026 (updated for Week 3)
  * Course:  SDC320L - Advanced Object-Oriented Programming Using C#
- * Project: Week 2 - Software Design; Interfaces & Polymorphism
+ * Project: Week 3 - Abstraction, Constructors, & Access Specifiers
  *
  * Purpose: IInterestBearing is an INTERFACE for any account that earns
  *          interest. It defines what an interest-earning account must be
